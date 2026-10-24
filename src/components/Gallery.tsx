@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { Observer } from 'gsap/Observer';
 import { Flip } from 'gsap/Flip';
-import { photos, type Photo, type PhotoCategory } from '../data/photos';
+import { categoryLabels, photos, type Photo, type PhotoCategory } from '../data/photos';
 import Detail from './Detail';
 import TopNav from './TopNav';
 import ContentPage from './ContentPage';
+import ContactSheetModal from './ContactSheetModal';
 import SmartImage from './SmartImage';
 import { themes, type ThemeKey } from '../data/themes';
 import { toFaDigits } from '../utils/format';
@@ -13,7 +14,7 @@ import { toFaDigits } from '../utils/format';
 gsap.registerPlugin(Observer, Flip);
 
 /* ---- Motion constants (position-based, signed velocity) ---- */
-const BASE_SPEED = 60;          // px/sec — default autoplay speed
+const BASE_SPEED = 56;          // px/sec — calm editorial autoplay speed
 const WHEEL_GAIN = 55;          // impulse per normalized wheel unit
 const MAX_SPEED = 200;          // clamp
 const IMPULSE_DECAY = 2.2;      // per second exponential decay of inputImpulse
@@ -21,6 +22,7 @@ const IMPULSE_CLAMP = 280;      // clamp accumulated impulse magnitude
 const VELOCITY_SMOOTHING = 6.0; // per second smoothing toward desired velocity
 const RESUME_SMOOTHING = 3.5;   // gentler smoothing after release
 const VELOCITY_EPSILON = 0.5;   // snap-to-zero threshold
+const THEME_STORAGE_KEY = 'karan_studio_theme';
 
 type InteractionState =
   | 'gallery'
@@ -49,6 +51,16 @@ const wrap = (min: number, max: number, v: number) => {
   if (out === max) out = min;
   return out;
 };
+
+function readInitialTheme(): ThemeKey {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) as ThemeKey | null;
+    if (saved && saved in themes) return saved;
+  } catch {
+    // ignore storage errors
+  }
+  return 'rose';
+}
 
 export default function Gallery() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -90,6 +102,7 @@ export default function Gallery() {
   const hoverProxyRef = useRef<HTMLDivElement | null>(null);
   const hoverSuppressedItemRef = useRef<HTMLElement | null>(null);
   const closeHandoffActiveRef = useRef(false);
+  const [hoveredPhoto, setHoveredPhoto] = useState<Photo | null>(null);
 
   type HoverLeaveSession = {
     id: number;
@@ -118,18 +131,34 @@ export default function Gallery() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [textReady, setTextReady] = useState(false);
 
-  /* ---------- Content page ---------- */
+  /* ---------- Content drawer & Contact Sheet ---------- */
   const [contentOpen, setContentOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<'top' | 'studio' | 'services' | 'contact' | null>(null);
 
   /* ---------- Theme & filter ---------- */
-  const [theme, setTheme] = useState<ThemeKey>('rose');
+  const [theme, setTheme] = useState<ThemeKey>(readInitialTheme);
   const [filter, setFilter] = useState<'All' | PhotoCategory>('All');
+
+  const handleThemeChange = (next: ThemeKey) => {
+    setTheme(next);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   const visiblePhotos = useMemo(
     () => (filter === 'All' ? photos : photos.filter((p) => p.category === filter)),
     [filter],
   );
+
+  const currentDetailIndex = useMemo(() => {
+    if (!photo) return 0;
+    const idx = visiblePhotos.findIndex((p) => p.id === photo.id);
+    return idx >= 0 ? idx : 0;
+  }, [photo, visiblePhotos]);
 
   /* Three copies ensure seamless infinite wrapping even on 2K/4K/ultrawide screens when filtered. */
   const items = useMemo(() => {
@@ -147,6 +176,15 @@ export default function Gallery() {
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (meta) meta.content = V.bg;
   }, [V.bg]);
+
+  /* Pause rail motion while Contact Sheet or Content drawer is open */
+  useEffect(() => {
+    if (archiveOpen || contentOpen) {
+      requestMotionStop();
+    } else if (stateRef.current === 'gallery') {
+      requestMotionResume();
+    }
+  }, [archiveOpen, contentOpen]);
 
   /* =======================================================================
      Layout — measure one copy's width
@@ -186,6 +224,7 @@ export default function Gallery() {
 
   /* Reset stale hover proxies when category filter changes */
   useEffect(() => {
+    setHoveredPhoto(null);
     if (stateRef.current === 'hover') {
       const prevProxy = hoverProxyRef.current;
       const prevVisual = hoverItemRef.current?.querySelector<HTMLElement>('.gallery-visual');
@@ -201,7 +240,7 @@ export default function Gallery() {
       hoverItemRef.current = null;
       hoverPhotoRef.current = null;
       stateRef.current = 'gallery';
-      requestMotionResume();
+      if (!archiveOpen && !contentOpen) requestMotionResume();
     }
   }, [filter]);
 
@@ -264,7 +303,7 @@ export default function Gallery() {
      Observer — wheel / touch / pointer drag
      ======================================================================= */
   useEffect(() => {
-    if (contentOpen || detailVisible) return;
+    if (contentOpen || detailVisible || archiveOpen) return;
     const target = rootRef.current;
     if (!target) return;
 
@@ -299,7 +338,7 @@ export default function Gallery() {
       },
     });
     return () => obs.kill();
-  }, [contentOpen, detailVisible]);
+  }, [contentOpen, detailVisible, archiveOpen]);
 
   /* =======================================================================
      Hover helpers
@@ -313,12 +352,25 @@ export default function Gallery() {
       img.src = src;
     });
 
-  const getItemResolvedSrc = (item: HTMLElement, fallbackPhoto: Photo): string => {
-    const img = item.querySelector<HTMLImageElement>('img');
+  const getItemResolvedSrc = (item: HTMLElement | null, fallbackPhoto: Photo): string => {
+    const img = item?.querySelector<HTMLImageElement>('img');
     if (img && img.complete && img.naturalWidth > 0 && (img.currentSrc || img.src)) {
       return img.currentSrc || img.src;
     }
     return img?.src || fallbackPhoto.src;
+  };
+
+  const centerItemInRail = (item: HTMLElement) => {
+    const track = trackRef.current;
+    const copyWidth = motionRef.current.copyWidth;
+    if (!track || copyWidth <= 0) return;
+    const desiredX = wrap(
+      0,
+      copyWidth,
+      item.offsetLeft - window.innerWidth / 2 + item.offsetWidth / 2,
+    );
+    motionRef.current.positionX = desiredX;
+    gsap.set(track, { x: -desiredX });
   };
 
   const makeProxyDiv = (
@@ -504,6 +556,7 @@ export default function Gallery() {
     }
 
     stateRef.current = 'hover';
+    setHoveredPhoto(p);
     requestMotionStop();
 
     const rect = visual.getBoundingClientRect();
@@ -546,6 +599,7 @@ export default function Gallery() {
   };
 
   const deactivateHover = () => {
+    setHoveredPhoto(null);
     if (stateRef.current !== 'hover') return;
     const item = hoverItemRef.current;
     const proxy = hoverProxyRef.current;
@@ -560,7 +614,7 @@ export default function Gallery() {
     hoverItemRef.current = null;
     hoverPhotoRef.current = null;
     stateRef.current = 'gallery';
-    requestMotionResume();
+    if (!archiveOpen && !contentOpen) requestMotionResume();
   };
 
   /* =======================================================================
@@ -575,6 +629,7 @@ export default function Gallery() {
     const state = stateRef.current;
     if (state !== 'gallery' && state !== 'hover') return;
 
+    setHoveredPhoto(null);
     const activeSrc = getItemResolvedSrc(item, p);
 
     const tx = transactionRef.current;
@@ -644,7 +699,7 @@ export default function Gallery() {
     };
     transactionRef.current = txOpen;
 
-    await Promise.all([preloadImage(activeSrc), new Promise((r) => setTimeout(r, 120))]);
+    await Promise.all([preloadImage(activeSrc), new Promise((r) => setTimeout(r, 110))]);
 
     if (txOpen.cancelled || transactionRef.current !== txOpen) {
       if (carriedProxy && carriedProxy.isConnected) carriedProxy.remove();
@@ -750,10 +805,73 @@ export default function Gallery() {
           if (!txOpen.cancelled && transactionRef.current === txOpen) setTextReady(true);
         },
         undefined,
-        0.42,
+        0.4,
       );
     } catch (e) {
       rollback(`exception: ${(e as Error)?.message ?? String(e)}`);
+    }
+  };
+
+  /* =======================================================================
+     Step Prev / Next inside Detail (keeps origin capsule synced!)
+     ======================================================================= */
+  const stepDetailPhoto = (delta: -1 | 1) => {
+    if (stateRef.current !== 'detail' || visiblePhotos.length <= 1) return;
+    const active = activePhotoRef.current;
+    if (!active) return;
+
+    const curIdx = visiblePhotos.findIndex((p) => p.id === active.id);
+    const nextIdx = ((curIdx >= 0 ? curIdx : 0) + delta + visiblePhotos.length) % visiblePhotos.length;
+    const nextPhoto = visiblePhotos[nextIdx];
+    if (!nextPhoto) return;
+
+    // Restore previous origin capsule visibility
+    if (originVisualRef.current && originVisualRef.current.isConnected) {
+      gsap.set(originVisualRef.current, { autoAlpha: 1, scale: 1, clearProps: 'boxShadow' });
+    }
+
+    const newItem =
+      trackRef.current?.querySelector<HTMLElement>(
+        `[data-clone-index="0"][data-image-id="${nextPhoto.id}"]`,
+      ) ?? null;
+
+    if (newItem) {
+      centerItemInRail(newItem);
+      const newVisual = newItem.querySelector<HTMLElement>('.gallery-visual');
+      if (newVisual) gsap.set(newVisual, { autoAlpha: 0 });
+      originItemRef.current = newItem;
+      originVisualRef.current = newVisual;
+    }
+
+    const nextSrc = getItemResolvedSrc(newItem, nextPhoto);
+    setResolvedDetailSrc(nextSrc);
+    setPhoto(nextPhoto);
+
+    if (detailImageBoxRef.current) {
+      gsap.fromTo(
+        detailImageBoxRef.current,
+        { opacity: 0.72, scale: 0.985 },
+        { opacity: 1, scale: 1, duration: 0.38, ease: 'power2.out' },
+      );
+    }
+  };
+
+  /* =======================================================================
+     Select photo from Contact Sheet Archive
+     ======================================================================= */
+  const handleSelectFromArchive = (selected: Photo) => {
+    setArchiveOpen(false);
+    const newItem =
+      trackRef.current?.querySelector<HTMLElement>(
+        `[data-clone-index="0"][data-image-id="${selected.id}"]`,
+      ) ?? null;
+
+    if (newItem) {
+      centerItemInRail(newItem);
+      requestAnimationFrame(() => {
+        dragDistanceRef.current = 0;
+        void openDetail(selected, newItem);
+      });
     }
   };
 
@@ -925,6 +1043,7 @@ export default function Gallery() {
      Navigation
      ======================================================================= */
   const navigateTo = (p: 'studio' | 'services' | 'contact') => {
+    if (archiveOpen) setArchiveOpen(false);
     if (stateRef.current === 'detail') {
       closeDetail();
     }
@@ -944,18 +1063,28 @@ export default function Gallery() {
   };
 
   /* =======================================================================
-     Keyboard support
+     Keyboard support (Escape + ArrowLeft/ArrowRight in Detail)
      ======================================================================= */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (stateRef.current === 'detail') closeDetail();
+        else if (archiveOpen) setArchiveOpen(false);
         else if (contentOpen) setContentOpen(false);
+      } else if (stateRef.current === 'detail') {
+        // In RTL reading order, ArrowLeft advances to next frame, ArrowRight returns to previous
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          stepDetailPhoto(1);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          stepDetailPhoto(-1);
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [contentOpen]);
+  }, [contentOpen, archiveOpen, visiblePhotos]);
 
   /* =======================================================================
      Render
@@ -974,8 +1103,9 @@ export default function Gallery() {
 
       <TopNav
         theme={theme}
-        onThemeChange={setTheme}
+        onThemeChange={handleThemeChange}
         onNavigate={navigateTo}
+        onOpenArchive={() => setArchiveOpen(true)}
         topText={V.topText}
         filter={filter}
         onFilterChange={setFilter}
@@ -983,10 +1113,12 @@ export default function Gallery() {
 
       {/* راهنمای پایین صفحه */}
       <div className="absolute bottom-0 left-0 right-0 z-40 flex items-center justify-between px-5 md:px-8 py-5 pointer-events-none">
-        <span className="text-[11px] text-white/60">اسکرول · بکشید · کلیک کنید</span>
-        <span className="text-[11px] text-white/60">
-          {toFaDigits(String(visiblePhotos.length).padStart(2, '0'))} /{' '}
-          {toFaDigits(String(photos.length).padStart(2, '0'))} اثر
+        <span className="text-[11px] text-white/65">
+          ورق بزنید · بکشید · برای تماشای داستان کلیک کنید
+        </span>
+        <span className="text-[11px] text-white/65">
+          {toFaDigits(String(visiblePhotos.length).padStart(2, '0'))} از{' '}
+          {toFaDigits(String(photos.length).padStart(2, '0'))} قابِ گزیده
         </span>
       </div>
 
@@ -1042,18 +1174,44 @@ export default function Gallery() {
         ))}
       </div>
 
-      {/* عنوان مرکزی */}
+      {/* عنوان مرکزی + زمزمهٔ شناسنامهٔ قاب هنگام هاور */}
       <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center px-4 w-full max-w-xl"
         style={{ zIndex: 20 }}
       >
         <div
           className="font-fa-head text-[72px] md:text-[124px] leading-[1.12] text-white"
-          style={{ textShadow: '0 8px 36px rgba(0,0,0,0.16)' }}
+          style={{ textShadow: '0 8px 36px rgba(0,0,0,0.18)' }}
         >
           کارن
         </div>
-        <div className="mt-3 text-[12px] md:text-[13px] text-white/85">یک استودیوی عکاسی</div>
+
+        <div className="mt-3 min-h-[26px] flex items-center justify-center">
+          {hoveredPhoto ? (
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1 rounded-full text-[12px] text-white/95 transition-all duration-300"
+              style={{
+                background: 'rgba(18, 17, 16, 0.28)',
+                border: '1px solid rgba(255,255,255,0.22)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+              }}
+            >
+              <span className="font-medium">«{hoveredPhoto.title}»</span>
+              <span className="text-white/60">·</span>
+              <span className="text-white/80">
+                {categoryLabels[hoveredPhoto.category]} — {hoveredPhoto.location}
+              </span>
+            </div>
+          ) : (
+            <div
+              className="text-[12px] md:text-[13px] text-white/85 transition-opacity duration-300"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}
+            >
+              روایتِ آرامِ نور، چهره و سفر
+            </div>
+          )}
+        </div>
       </div>
 
       {/* لایهٔ هاور */}
@@ -1068,9 +1226,13 @@ export default function Gallery() {
         ref={detailRootRef}
         photo={photo}
         resolvedSrc={resolvedDetailSrc}
+        currentIndex={currentDetailIndex}
+        totalCount={visiblePhotos.length}
         visible={detailVisible}
         textReady={textReady}
         onBack={closeDetail}
+        onPrev={() => stepDetailPhoto(-1)}
+        onNext={() => stepDetailPhoto(1)}
         onOpenServices={openServicesFromDetail}
         imageBoxRef={detailImageBoxRef}
         theme={theme}
@@ -1081,6 +1243,16 @@ export default function Gallery() {
         ref={detailOverlayRef}
         className="fixed inset-0 pointer-events-none"
         style={{ zIndex: 100 }}
+      />
+
+      {/* برگهٔ کنتاکت (آرشیو یکجای آثار) */}
+      <ContactSheetModal
+        open={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        filter={filter}
+        onFilterChange={setFilter}
+        onSelectPhoto={handleSelectFromArchive}
+        theme={theme}
       />
 
       {/* صفحهٔ محتوا */}

@@ -8,6 +8,7 @@ type Props = {
   theme: ThemeKey;
   onThemeChange: (t: ThemeKey) => void;
   onNavigate: (p: 'studio' | 'services' | 'contact') => void;
+  onOpenArchive: () => void;
   topText: string;
   filter: 'All' | PhotoCategory;
   onFilterChange: (c: 'All' | PhotoCategory) => void;
@@ -16,13 +17,14 @@ type Props = {
 const NAV_ITEMS: Array<{ id: 'studio' | 'services' | 'contact'; label: string }> = [
   { id: 'studio', label: 'استودیو' },
   { id: 'services', label: 'خدمات' },
-  { id: 'contact', label: 'تماس' },
+  { id: 'contact', label: 'گفت‌وگو' },
 ];
 
 export default function TopNav({
   theme,
   onThemeChange,
   onNavigate,
+  onOpenArchive,
   topText,
   filter,
   onFilterChange,
@@ -50,14 +52,14 @@ export default function TopNav({
   return (
     <header className="absolute top-0 left-0 right-0 z-40 pointer-events-none">
       <div className="relative flex items-center justify-between px-5 py-5 md:px-8 md:py-6">
-        {/* ── برند (سمت راست در چیدمان راست‌به‌چپ) ── */}
+        {/* ── برند ── */}
         <button
           type="button"
           onClick={() => {
             if (filter !== 'All') onFilterChange('All');
           }}
           className="pointer-events-auto flex items-baseline gap-3 leading-none cursor-pointer text-right"
-          aria-label="استودیو کارن"
+          aria-label="استودیو عکاسی کارن"
         >
           <span
             className="font-logo-b text-[26px] text-white"
@@ -69,12 +71,12 @@ export default function TopNav({
             className="text-[11px] text-white/75"
             style={{ color: topText, lineHeight: 1 }}
           >
-            استودیو
+            آتلیهٔ عکاسی
           </span>
         </button>
 
         {/* ── منوی میانی (دسکتاپ) ── */}
-        <nav className="pointer-events-auto absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-10">
+        <nav className="pointer-events-auto absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-9">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -87,8 +89,30 @@ export default function TopNav({
           ))}
         </nav>
 
-        {/* ── فیلتر + پوسته + منوی موبایل (سمت چپ در چیدمان راست‌به‌چپ) ── */}
-        <div className="pointer-events-auto flex items-center gap-3 md:gap-4">
+        {/* ── آرشیو + فیلتر + پالت رنگ + منوی موبایل ── */}
+        <div className="pointer-events-auto flex items-center gap-2.5 md:gap-3.5">
+          {/* دکمهٔ کنتاکت‌شیت (آرشیو یکجا) */}
+          <button
+            type="button"
+            onClick={onOpenArchive}
+            title="مشاهدهٔ برگهٔ کنتاکت (فهرست یکجای آثار)"
+            aria-label="مشاهدهٔ برگهٔ کنتاکت"
+            className="cursor-pointer flex items-center gap-1.5 h-[32px] px-3 rounded-full whitespace-nowrap transition-all duration-200 hover:bg-white/15"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1px solid rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow:
+                '0 1px 12px -4px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12)',
+            }}
+          >
+            <Icon name="grid" className="text-white/80 text-[13px]" />
+            <span className="hidden sm:inline text-[11px] text-white/90 leading-none">
+              کنتاکت‌شیت
+            </span>
+          </button>
+
           {/* کنترل فیلتر شیشه‌ای */}
           <div ref={filterWrapRef} className="relative">
             <button
@@ -106,7 +130,7 @@ export default function TopNav({
                 boxShadow:
                   '0 1px 12px -4px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.12)',
               }}
-              aria-label="فیلتر گالری"
+              aria-label="فیلتر مجموعهٔ آثار"
               aria-expanded={filterOpen}
             >
               <span className="text-[11px] text-white/90 leading-none">
@@ -122,14 +146,14 @@ export default function TopNav({
             <div
               className="absolute left-0 mt-2 overflow-hidden"
               style={{
-                minWidth: '148px',
+                minWidth: '158px',
                 borderRadius: '16px',
-                background: 'rgba(28,28,32,0.48)',
+                background: 'rgba(26, 25, 29, 0.56)',
                 border: '1px solid rgba(255,255,255,0.22)',
                 backdropFilter: 'blur(28px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(28px) saturate(180%)',
                 boxShadow:
-                  '0 12px 40px -8px rgba(0,0,0,0.32), 0 2px 8px -2px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.18)',
+                  '0 12px 40px -8px rgba(0,0,0,0.34), 0 2px 8px -2px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.18)',
                 transformOrigin: 'top left',
                 transform: filterOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(-4px)',
                 opacity: filterOpen ? 1 : 0,
@@ -179,8 +203,8 @@ export default function TopNav({
             </div>
           </div>
 
-          {/* نمونه‌های پوسته */}
-          <div className="flex items-center gap-[8px]" role="group" aria-label="انتخاب پوسته رنگی">
+          {/* نمونه‌های پالت رنگ */}
+          <div className="hidden sm:flex items-center gap-[7px]" role="group" aria-label="انتخاب پالت رنگ">
             {(Object.keys(themes) as ThemeKey[]).map((k) => {
               const isActive = theme === k;
               return (
@@ -229,13 +253,13 @@ export default function TopNav({
             <div
               className="absolute left-0 mt-2 overflow-hidden"
               style={{
-                minWidth: '156px',
-                borderRadius: '16px',
-                background: 'rgba(28,28,32,0.55)',
+                minWidth: '176px',
+                borderRadius: '18px',
+                background: 'rgba(26, 25, 29, 0.68)',
                 border: '1px solid rgba(255,255,255,0.22)',
                 backdropFilter: 'blur(28px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-                boxShadow: '0 12px 40px -8px rgba(0,0,0,0.35)',
+                boxShadow: '0 12px 40px -8px rgba(0,0,0,0.38)',
                 transformOrigin: 'top left',
                 transform: mobileMenuOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(-4px)',
                 opacity: mobileMenuOpen ? 1 : 0,
@@ -258,6 +282,31 @@ export default function TopNav({
                     </button>
                   </li>
                 ))}
+                <li className="border-t border-white/15 mt-1 pt-2 px-4 pb-2">
+                  <div className="text-[10px] text-white/55 mb-2">پالت رنگ</div>
+                  <div className="flex items-center gap-2">
+                    {(Object.keys(themes) as ThemeKey[]).map((k) => {
+                      const isActive = theme === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => onThemeChange(k)}
+                          aria-label={themes[k].label}
+                          className="cursor-pointer rounded-full"
+                          style={{
+                            width: isActive ? '18px' : '14px',
+                            height: isActive ? '18px' : '14px',
+                            background: themes[k].bg,
+                            boxShadow: isActive
+                              ? '0 0 0 1.5px rgba(255,255,255,0.95)'
+                              : '0 0 0 1px rgba(255,255,255,0.4)',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
