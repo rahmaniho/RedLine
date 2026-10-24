@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* ---------- Base ---------- */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  direction: rtl;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f4f1ec;
+  font-family: "Vazirmatn", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Typography helpers ---------- */
+.font-logo-b {
+  font-family: "Noto Naskh Arabic", "Vazirmatn", serif;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
+.font-fa-head {
+  font-family: "Noto Naskh Arabic", "Vazirmatn", serif;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Cursive Persian script requires zero letter-spacing to keep glyph joins intact */
+.fa-track,
+.fa-track-wide {
+  letter-spacing: 0;
+}
+
+/* ---------- Brand helpers ---------- */
+.lumen-handle-tab {
+  will-change: transform;
+  animation: 3.4s ease-in-out infinite lumen-handle-breathe;
+}
+
+@keyframes lumen-handle-breathe {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(4px);
+  }
+}
+
+.lumen-honey {
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  top: auto;
+  left: -10000px;
+  overflow: hidden;
+}
+
+/* ---------- Subtle image skeleton ---------- */
+@keyframes karan-shimmer {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.karan-img-skeleton {
+  animation: karan-shimmer 2.2s ease-in-out infinite;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(20, 18, 16, 0.16);
+  border-radius: 999px;
+  border: 3px solid #fff;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 18, 16, 0.3);
+}
+
+/* Persian numerals helper */
+.fa-num {
+  font-feature-settings: "ss01";
+}
+
+/* ---------- Selection ---------- */
+::selection {
+  background: rgba(217, 110, 106, 0.28);
+}
