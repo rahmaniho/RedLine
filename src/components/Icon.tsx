@@ -9,7 +9,9 @@ export type IconName =
   | 'arrow-down'
   | 'menu'
   | 'close'
-  | 'check';
+  | 'check'
+  | 'grid'
+  | 'plus';
 
 type Props = SVGProps<SVGSVGElement> & {
   name: IconName;
@@ -54,6 +56,12 @@ export default function Icon({ name, className = '', style, ...rest }: Props) {
       )}
       {name === 'check' && (
         <path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z" />
+      )}
+      {name === 'grid' && (
+        <path d="M21 3C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H21ZM11 13H4V19H11V13ZM20 13H13V19H20V13ZM11 5H4V11H11V5ZM20 5H13V11H20V5Z" />
+      )}
+      {name === 'plus' && (
+        <path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z" />
       )}
     </svg>
   );

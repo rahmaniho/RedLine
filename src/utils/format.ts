@@ -6,7 +6,7 @@ export function toFaDigits(value: string | number): string {
 }
 
 /** Generate a clean editorial SVG data-URI fallback if network images are unreachable. */
-export function createEditorialFallbackSvg(title: string, subtitle = 'استودیو کارن'): string {
+export function createEditorialFallbackSvg(title: string, subtitle = 'آتلیهٔ عکاسی کارن'): string {
   const safeTitle = title.replace(/[<>&"']/g, '');
   const safeSub = subtitle.replace(/[<>&"']/g, '');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200">
