@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { themes, type ThemeKey } from '../data/themes';
 import type { PhotoCategory } from '../data/photos';
 import Icon from './Icon';
+import KarenSoftCredit from './KarenSoftCredit';
 import SmartImage from './SmartImage';
 
 type Props = {
@@ -1068,12 +1069,10 @@ export default function ContentPage({
                 </div>
               </div>
 
-              <div
-                className="pt-6 border-t border-white/20 flex flex-wrap items-center justify-between gap-4 text-[11px]"
-                style={{ opacity: 0.75 }}
-              >
-                <span>© ۲۰۲۶ آتلیهٔ عکاسی کارن — تمامی حقوق محفوظ است</span>
-                <span>تک‌چهره · آیینِ پیوند · سفرنامه</span>
+              <div className="pt-6 border-t border-white/20 flex flex-col lg:flex-row items-center justify-between gap-5 text-[11px]">
+                <span className="text-white/75">© ۲۰۲۶ آتلیهٔ عکاسی کارن — تمامی حقوق محفوظ است</span>
+                <KarenSoftCredit />
+                <span className="text-white/75">تک‌چهره · آیینِ پیوند · سفرنامه</span>
               </div>
             </div>
           </footer>
