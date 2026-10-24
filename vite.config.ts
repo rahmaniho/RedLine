@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import tailwindcss from "@tailwindcss/vite";
@@ -9,7 +10,22 @@ const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  base: "./",
+  plugins: [
+    react(),
+    tailwindcss(),
+    {
+      name: "github-pages-404-fallback",
+      closeBundle() {
+        const distDir = path.resolve(__dirname, "dist");
+        const indexHtml = path.join(distDir, "index.html");
+        const fallbackHtml = path.join(distDir, "404.html");
+        if (fs.existsSync(indexHtml)) {
+          fs.copyFileSync(indexHtml, fallbackHtml);
+        }
+      },
+    },
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

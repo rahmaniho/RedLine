@@ -67,6 +67,13 @@ npm run build
 npm run preview
 ```
 
+## انتشار روی GitHub Pages
+
+این پروژه به‌صورت خودکار از طریق **GitHub Actions** (`.github/workflows/deploy-pages.yml`) با هر بار Push یا Merge به شاخهٔ `main` ساخته و روی **GitHub Pages** منتشر می‌شود:
+
+- **آدرس نمایش آنلاین:** [https://rahmaniho.github.io/RedLine/](https://rahmaniho.github.io/RedLine/)
+- در تنظیمات ریپازیتوری (`Settings → Pages`)، گزینهٔ **Source** روی **GitHub Actions** قرار دارد و مسیر نسبی فایل‌ها (`base: "./"` در `vite.config.ts`) به همراه `404.html` و `.nojekyll` پیکربندی شده است.
+
 ## پیکربندی اختیاری فرم تماس
 
 به‌صورت پیش‌فرض، درخواست‌های ارسالی در فرم تماس اعتبارسنجی شده و در مرورگر ذخیره می‌شوند. در صورت تمایل به اتصال فرم به سرور اختصاصی، فایل `.env` بسازید و متغیر زیر را تنظیم کنید:
