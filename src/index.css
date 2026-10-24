@@ -105,3 +105,218 @@ body {
 ::selection {
   background: rgba(217, 110, 106, 0.28);
 }
+
+/* ------------------------------------------------------------------
+   KarenSoft credit (footer) — rotating gradient border, orbiting glow,
+   pulsing ripples, floating mark, pixel trail, and masked wordmark shine
+   ------------------------------------------------------------------ */
+.ks-ring {
+  background: conic-gradient(from 0deg, #0b1f6b, #1d4ed8, #22d3ee, #0ea5e9, #1d4ed8, #0b1f6b);
+  animation: ks-spin 5s linear infinite;
+}
+
+.ks-credit:hover .ks-ring {
+  animation-duration: 1.6s;
+}
+
+.ks-float {
+  animation: ks-float 3.2s ease-in-out infinite;
+}
+
+.ks-shine {
+  transform: translateX(-120%) skewX(-20deg);
+  animation: ks-shine 5s ease-in-out 1.6s infinite;
+}
+
+.ks-credit:hover .ks-shine {
+  animation: ks-shine-once 0.9s ease-out;
+}
+
+/* Ring around the KarenSoft mark: conic gradient masked to a 2.5px band */
+.ks-logo-ring {
+  background: conic-gradient(
+    from 0deg,
+    #22d3ee,
+    #1d4ed8 30%,
+    rgba(29, 78, 216, 0.08) 55%,
+    #0ea5e9 80%,
+    #22d3ee
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2.5px),
+    #000 calc(100% - 2.5px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2.5px),
+    #000 calc(100% - 2.5px)
+  );
+  animation: ks-rotate 2.8s linear infinite;
+}
+
+.ks-orbit {
+  animation: ks-rotate 2.8s linear infinite reverse;
+}
+
+.ks-credit:hover .ks-logo-ring,
+.ks-credit:hover .ks-orbit {
+  animation-duration: 1s;
+}
+
+.ks-ripple {
+  animation: ks-ripple 2.4s ease-out infinite;
+}
+
+/* Animated pixel particles around the KS mark */
+.ks-pixel {
+  animation: ks-pixel-drift 2.6s ease-in-out infinite;
+}
+
+/* Full 360 spin of the KS mark on hover */
+.ks-mark-wrap {
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ks-credit:hover .ks-mark-wrap.ks-entered {
+  transform: rotate(360deg) scale(1.08);
+}
+
+/* Cyan light band sweeping across the wordmark letters */
+.ks-text-shine {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.9) 40%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(34, 211, 238, 0.9) 60%,
+    transparent 100%
+  );
+  transform: translateX(-110%);
+  animation: ks-text-sweep 3.6s ease-in-out infinite;
+}
+
+/* "طراحی و توسعه:" — flowing footer-text → cyan → white gradient */
+.ks-label-gradient {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    #bae6fd 25%,
+    #ffffff 50%,
+    #bae6fd 75%,
+    rgba(255, 255, 255, 0.78) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ks-flow 3s linear infinite;
+}
+
+@keyframes ks-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes ks-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ks-shine {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  25%,
+  100% {
+    transform: translateX(420%) skewX(-20deg);
+  }
+}
+
+@keyframes ks-shine-once {
+  from {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(420%) skewX(-20deg);
+  }
+}
+
+@keyframes ks-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ks-ripple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes ks-pixel-drift {
+  0%,
+  100% {
+    transform: translate(var(--px, 0px), var(--py, 0px));
+    opacity: 0;
+  }
+  50% {
+    transform: translate(calc(var(--px, 0px) - 6px), calc(var(--py, 0px) + 2px));
+    opacity: 0.9;
+  }
+}
+
+@keyframes ks-text-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  55%,
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes ks-flow {
+  to {
+    background-position: -200% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-ring,
+  .ks-float,
+  .ks-shine,
+  .ks-credit:hover .ks-shine,
+  .ks-logo-ring,
+  .ks-orbit,
+  .ks-ripple,
+  .ks-pixel,
+  .ks-text-shine,
+  .ks-label-gradient {
+    animation: none !important;
+  }
+
+  .ks-credit:hover .ks-mark-wrap.ks-entered {
+    transform: none !important;
+  }
+
+  .ks-label-gradient {
+    color: rgba(255, 255, 255, 0.8);
+    background: none;
+  }
+}

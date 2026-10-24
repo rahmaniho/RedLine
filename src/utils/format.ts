@@ -1,5 +1,12 @@
 const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'] as const;
 
+/** Resolve a public asset path safely under both root ('/') and GitHub Pages relative ('./') bases. */
+export function withBasePath(assetPath: string): string {
+  const clean = assetPath.replace(/^\/+/, '');
+  const base = import.meta.env.BASE_URL || './';
+  return `${base.endsWith('/') ? base : `${base}/`}${clean}`;
+}
+
 /** Convert ASCII digits 0-9 to Persian digits ۰-۹. */
 export function toFaDigits(value: string | number): string {
   return String(value).replace(/\d/g, (d) => PERSIAN_DIGITS[Number(d)] ?? d);
